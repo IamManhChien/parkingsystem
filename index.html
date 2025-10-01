@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking system</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+        }
+        
+        h1 {
+            margin: 20px 0;
+            text-align: center;
+            font-size: 1.8rem;
+            color: #333;
+        }
+        
+        .parking-area {
+            display: flex;
+            flex-direction: column;
+            background: #ebebe8;
+            border: 2px solid #b2c2b2;
+            border-radius: 10px;
+            padding: 24px 16px;
+            margin-top: 20px;
+            width: 600px;
+            height: 500px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .slots-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex: 1;
+            margin-bottom: 20px;
+        }
+        
+        .bottom-area {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            height: 100px;
+            width: 100%;
+        }
+        
+        .slot {
+            width: 50%;
+            height: 70px;
+            margin: 8px 0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #222;
+            background: #c6e5c6;
+            border: 1.5px solid #7fa87f;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .slot.full {
+            background: #ff7a7a;
+            border-color: #d32f2f;
+            box-shadow: 0 2px 6px rgba(211, 47, 47, 0.3);
+        }
+        
+        .slot.empty {
+            background: #81c784;
+            border-color: #388e3c;
+            box-shadow: 0 2px 6px rgba(56, 142, 60, 0.3);
+        }
+        
+        .slot-label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #222;
+            text-align: center;
+        }
+        
+        /* Barrier & Gate Area */
+        .barrier {
+            width: 400px;
+            height: 100px;
+            background: #546e7a;
+            border-radius: 4px;
+            margin-right: 20px;
+        }
+        
+        .gate {
+            width: 200px;
+            height: 20px;
+            background: #78909c;
+            border-radius: 4px;
+        }
+        
+        /* Mobile styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+                margin: 15px 0;
+            }
+            
+            .parking-area {
+                width: calc(100vw - 20px);
+                height: 350px;
+                padding: 12px;
+                margin-top: 15px;
+            }
+            
+            .slot {
+                height: 50px;
+                margin: 4px 0;
+                font-size: 1rem;
+            }
+            
+            .slot-label {
+                font-size: 0.9rem;
+            }
+            
+            .bottom-area {
+                height: 100px;
+            }
+            
+            .barrier {
+                width: 200px;
+                height: 40px;
+                margin-right: 10px;
+            }
+            
+            .gate {
+                width: 80px;
+                height: 15px;
+            }
+        }
+        
+        /* Extra small phones */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.2rem;
+                margin: 10px 0;
+            }
+            
+            .parking-area {
+                height: 280px;
+                padding: 10px;
+            }
+            
+            .slot {
+                height: 40px;
+                margin: 3px 0;
+                font-size: 0.9rem;
+            }
+            
+            .slot-label {
+                font-size: 0.8rem;
+            }
+            
+            .bottom-area {
+                height: 50px;
+            }
+            
+            .barrier {
+                width: 100px;
+                height: 30px;
+                margin-right: 8px;
+            }
+            
+            .gate {
+                width: 60px;
+                height: 12px;
+            }
+        }
+    </style>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+    <h1>Smart Parking System</h1>
+    <div class="parking-area" id="parkingArea">
+        <!-- Slots and barrier will be rendered here -->
+    </div>
+    <script>
+        // TODO: Thay cấu hình này bằng config Firebase của bạn
+        var firebaseConfig = {
+            apiKey: "AIzaSyCJx1osW9_Oi_MlFu4tk5KfqpKWiNkZJKE",
+            authDomain: "iotteam7-e3945.firebaseapp.com",
+            databaseURL: "https://iotteam7-e3945-default-rtdb.firebaseio.com",
+            projectId: "iotteam7-e3945",
+            storageBucket: "iotteam7-e3945.firebasestorage.app",
+            messagingSenderId: "692087421036",
+            appId: "1:692087421036:web:cb445ed2792ca9d9e10049",
+            measurementId: "G-82B5CNQ236"
+        };
+        firebase.initializeApp(firebaseConfig);
+        var dbRef = firebase.database().ref('slots');
+
+        function renderSlots(slots) {
+            const parkingArea = document.getElementById('parkingArea');
+            parkingArea.innerHTML = '';
+            
+            // Tạo container cho slots (phần trên)
+            const slotsContainer = document.createElement('div');
+            slotsContainer.className = 'slots-container';
+            
+            for (let i = 1; i <= 4; i++) {
+                const value = slots[i] === true || slots[i] === "true";
+                const slotDiv = document.createElement('div');
+                slotDiv.className = `slot ${value ? 'full' : 'empty'}`;
+                slotDiv.innerHTML = `<div class="slot-label">Slot ${i}</div>`;
+                slotsContainer.appendChild(slotDiv);
+            }
+            
+            parkingArea.appendChild(slotsContainer);
+            
+            // Tạo phần dưới chứa barrier và gate
+            const bottomArea = document.createElement('div');
+            bottomArea.className = 'bottom-area';
+            
+            const barrier = document.createElement('div');
+            barrier.className = 'barrier';
+            
+            const gate = document.createElement('div');
+            gate.className = 'gate';
+            
+            bottomArea.appendChild(barrier);
+            bottomArea.appendChild(gate);
+            parkingArea.appendChild(bottomArea);
+        }
+
+        // Lắng nghe thay đổi dữ liệu
+        dbRef.on('value', function (snapshot) {
+            renderSlots(snapshot.val() || {});
+        });
+    </script>
+</body>
+</html>
