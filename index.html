@@ -224,7 +224,7 @@
             const slotsContainer = document.createElement('div');
             slotsContainer.className = 'slots-container';
             
-            for (let i = 1; i <= 4; i++) {
+            for (let i = 4; i >= 1; i--) {
                 const value = slots[i] === true || slots[i] === "true";
                 const slotDiv = document.createElement('div');
                 slotDiv.className = `slot ${value ? 'full' : 'empty'}`;
@@ -234,19 +234,19 @@
             
             parkingArea.appendChild(slotsContainer);
             
-            // Tạo phần dưới chứa barrier và gate
-            const bottomArea = document.createElement('div');
-            bottomArea.className = 'bottom-area';
+            // // Tạo phần dưới chứa barrier và gate
+            // const bottomArea = document.createElement('div');
+            // bottomArea.className = 'bottom-area';
             
-            const barrier = document.createElement('div');
-            barrier.className = 'barrier';
+            // const barrier = document.createElement('div');
+            // barrier.className = 'barrier';
             
-            const gate = document.createElement('div');
-            gate.className = 'gate';
+            // const gate = document.createElement('div');
+            // gate.className = 'gate';
             
-            bottomArea.appendChild(barrier);
-            bottomArea.appendChild(gate);
-            parkingArea.appendChild(bottomArea);
+            // bottomArea.appendChild(barrier);
+            // bottomArea.appendChild(gate);
+            // parkingArea.appendChild(bottomArea);
         }
 
         // Lắng nghe thay đổi dữ liệu
