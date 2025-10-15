@@ -191,6 +191,90 @@
                 height: 12px;
             }
         }
+        
+        /* Emergency Dialog */
+        .emergency-dialog {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .emergency-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: emergencyPulse 1s infinite alternate;
+        }
+        
+        .emergency-content h2 {
+            color: #d32f2f;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .emergency-content .icon {
+            font-size: 2.5rem;
+            margin-right: 15px;
+        }
+        
+        .emergency-content p {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 25px;
+        }
+        
+        .emergency-btn {
+            background: #d32f2f;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        
+        .emergency-btn:hover {
+            background: #b71c1c;
+        }
+        
+        @keyframes emergencyPulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.02); }
+        }
+        
+        .emergency-alert {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #d32f2f;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 999;
+            display: none;
+            animation: emergencyBlink 0.5s infinite alternate;
+        }
+        
+        @keyframes emergencyBlink {
+            0% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
     </style>
     <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -200,6 +284,25 @@
     <h1>Smart Parking System</h1>
     <div class="parking-area" id="parkingArea">
         <!-- Slots and barrier will be rendered here -->
+    </div>
+    
+    <!-- Emergency Alert -->
+    <div class="emergency-alert" id="emergencyAlert">
+        ⚠️ EMERGENCY DETECTED!
+    </div>
+    
+    <!-- Emergency Dialog -->
+    <div class="emergency-dialog" id="emergencyDialog">
+        <div class="emergency-content">
+            <h2 id="emergencyTitle">
+                <span class="icon" id="emergencyIcon">🔥</span>
+                <span id="emergencyText">FIRE DETECTED!</span>
+            </h2>
+            <p id="emergencyMessage">
+                Emergency situation detected in the parking area. Please evacuate immediately and contact emergency services.
+            </p>
+            <button class="emergency-btn" onclick="callEmergency()">Gọi cứu hỏa</button>
+        </div>
     </div>
     <script>
         // TODO: Thay cấu hình này bằng config Firebase của bạn
@@ -215,6 +318,11 @@
         };
         firebase.initializeApp(firebaseConfig);
         var dbRef = firebase.database().ref('slots');
+        var emergencyRef = firebase.database().ref('emergency');
+        
+        let emergencyActive = false;
+        let audioContext;
+        let alarmInterval;
 
         function renderSlots(slots) {
             const parkingArea = document.getElementById('parkingArea');
@@ -249,10 +357,203 @@
             // parkingArea.appendChild(bottomArea);
         }
 
-        // Lắng nghe thay đổi dữ liệu
+        // Lắng nghe thay đổi dữ liệu slots
         dbRef.on('value', function (snapshot) {
             renderSlots(snapshot.val() || {});
         });
+        
+        // Lắng nghe thay đổi dữ liệu emergency
+        emergencyRef.on('value', function (snapshot) {
+            const emergencyData = snapshot.val() || {};
+            checkEmergencyStatus(emergencyData);
+        });
+        
+        function checkEmergencyStatus(emergencyData) {
+            const fireDetected = emergencyData.fire === true || emergencyData.fire === "true";
+            const smokeDetected = emergencyData.smoke === true || emergencyData.smoke === "true";
+            
+            if ((fireDetected || smokeDetected) && !emergencyActive) {
+                emergencyActive = true;
+                showEmergencyDialog(fireDetected, smokeDetected);
+                showEmergencyAlert();
+            } else if (!fireDetected && !smokeDetected && emergencyActive) {
+                emergencyActive = false;
+                hideEmergencyDialog();
+                hideEmergencyAlert();
+            }
+        }
+        
+        function showEmergencyDialog(fire, smoke) {
+            const dialog = document.getElementById('emergencyDialog');
+            const icon = document.getElementById('emergencyIcon');
+            const title = document.getElementById('emergencyText');
+            const message = document.getElementById('emergencyMessage');
+            
+            if (fire && smoke) {
+                icon.textContent = '🔥';
+                title.textContent = 'FIRE & SMOKE DETECTED!';
+                message.textContent = 'Both fire and smoke detected in the parking area. Evacuate immediately and contact emergency services!';
+            } else if (fire) {
+                icon.textContent = '🔥';
+                title.textContent = 'NGUY HIỂM!';
+                message.textContent = 'Có lửa trong khu vực đỗ xe. Vui lòng sơ tán ngay lập tức và liên hệ với dịch vụ khẩn cấp!';
+            } else if (smoke) {
+                icon.textContent = '💨';
+                title.textContent = 'KHÓI!';
+                message.textContent = 'Có khói trong khu vực đỗ xe. Vui lòng kiểm tra khu vực và sơ tán nếu cần thiết.';
+            }
+            
+            dialog.style.display = 'flex';
+            
+            // Start emergency alarm sound
+            startAlarmSound();
+        }
+        
+        function showEmergencyAlert() {
+            document.getElementById('emergencyAlert').style.display = 'block';
+        }
+        
+        function hideEmergencyDialog() {
+            document.getElementById('emergencyDialog').style.display = 'none';
+            stopAlarmSound();
+        }
+        
+        function hideEmergencyAlert() {
+            document.getElementById('emergencyAlert').style.display = 'none';
+            stopAlarmSound();
+        }
+        
+        function callEmergency() {
+            // Mở ứng dụng điện thoại hoặc hiển thị số
+            if (navigator.userAgent.match(/iPhone|iPad|iPod|Android/i)) {
+                window.location.href = 'tel:911';
+            } else {
+                alert('Emergency Number: 911\nFire Department: 911\nPlease call immediately!');
+            }
+        }
+        
+        // Emergency Alarm Sound Functions
+        function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioContext;
+        }
+        
+        function createSirenTone(frequency, duration) {
+            const context = initAudioContext();
+            const oscillator = context.createOscillator();
+            const gainNode = context.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(context.destination);
+            
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(frequency, context.currentTime);
+            
+            // Create siren effect by changing frequency
+            oscillator.frequency.exponentialRampToValueAtTime(frequency * 2, context.currentTime + duration / 2);
+            oscillator.frequency.exponentialRampToValueAtTime(frequency, context.currentTime + duration);
+            
+            gainNode.gain.setValueAtTime(0.3, context.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + duration);
+            
+            oscillator.start(context.currentTime);
+            oscillator.stop(context.currentTime + duration);
+        }
+        
+        function playAlarmBeep() {
+            const context = initAudioContext();
+            
+            // High frequency beep
+            const oscillator1 = context.createOscillator();
+            const gainNode1 = context.createGain();
+            
+            oscillator1.connect(gainNode1);
+            gainNode1.connect(context.destination);
+            
+            oscillator1.type = 'square';
+            oscillator1.frequency.setValueAtTime(1000, context.currentTime);
+            
+            gainNode1.gain.setValueAtTime(0.4, context.currentTime);
+            gainNode1.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.2);
+            
+            oscillator1.start(context.currentTime);
+            oscillator1.stop(context.currentTime + 0.2);
+            
+            // Low frequency beep (0.3 seconds later)
+            setTimeout(() => {
+                const oscillator2 = context.createOscillator();
+                const gainNode2 = context.createGain();
+                
+                oscillator2.connect(gainNode2);
+                gainNode2.connect(context.destination);
+                
+                oscillator2.type = 'square';
+                oscillator2.frequency.setValueAtTime(500, context.currentTime);
+                
+                gainNode2.gain.setValueAtTime(0.4, context.currentTime);
+                gainNode2.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.2);
+                
+                oscillator2.start(context.currentTime);
+                oscillator2.stop(context.currentTime + 0.2);
+            }, 300);
+        }
+        
+        function startAlarmSound() {
+            try {
+                // Initialize audio context on first user interaction
+                if (!audioContext) {
+                    initAudioContext();
+                }
+                
+                // Play initial siren
+                createSirenTone(400, 1.5);
+                
+                // Continue with beeping pattern
+                alarmInterval = setInterval(() => {
+                    if (emergencyActive) {
+                        playAlarmBeep();
+                    }
+                }, 1500);
+                
+            } catch (error) {
+                console.log('Audio not supported:', error);
+                // Fallback: try with simple beep
+                try {
+                    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTmX3fPUdyoGLILQ8+WCOQIX');
+                    audio.loop = true;
+                    audio.volume = 0.5;
+                    audio.play();
+                } catch (e) {
+                    console.log('Fallback audio failed:', e);
+                }
+            }
+        }
+        
+        function stopAlarmSound() {
+            if (alarmInterval) {
+                clearInterval(alarmInterval);
+                alarmInterval = null;
+            }
+            
+            if (audioContext) {
+                // Stop all audio nodes
+                try {
+                    audioContext.suspend();
+                } catch (e) {
+                    console.log('Error stopping audio:', e);
+                }
+            }
+        }
+        
+        // Enable audio on first user interaction
+        document.addEventListener('click', function enableAudio() {
+            initAudioContext();
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }, { once: true });
     </script>
 </body>
 </html>
