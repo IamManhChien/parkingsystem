@@ -49,15 +49,7 @@
             flex: 1;
             margin-bottom: 20px;
         }
-        
-        .bottom-area {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            height: 100px;
-            width: 100%;
-        }
-        
+                
         .slot {
             width: 50%;
             height: 70px;
@@ -94,41 +86,42 @@
             text-align: center;
         }
         
-        /* Barrier & Gate Area */
-        .barrier {
-            width: 400px;
-            height: 100px;
-            background: #546e7a;
-            border-radius: 4px;
-            margin-right: 20px;
-        }
-        
-        .gate {
-            width: 200px;
-            height: 20px;
-            background: #78909c;
-            border-radius: 4px;
-        }
-        
         /* Mobile styles */
         @media (max-width: 768px) {
             body {
                 padding: 5px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
             }
             
             h1 {
                 font-size: 1.5rem;
                 margin: 15px 0;
+                text-align: center;
             }
             
             .parking-area {
-                width: calc(100vw - 20px);
+                width: calc(100vw - 40px);
+                max-width: 400px;
                 height: 350px;
                 padding: 12px;
-                margin-top: 15px;
+                margin: 15px auto;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .slots-container {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
             }
             
             .slot {
+                width: 80%;
                 height: 50px;
                 margin: 4px 0;
                 font-size: 1rem;
@@ -142,16 +135,6 @@
                 height: 100px;
             }
             
-            .barrier {
-                width: 200px;
-                height: 40px;
-                margin-right: 10px;
-            }
-            
-            .gate {
-                width: 80px;
-                height: 15px;
-            }
         }
         
         /* Extra small phones */
@@ -159,14 +142,19 @@
             h1 {
                 font-size: 1.2rem;
                 margin: 10px 0;
+                text-align: center;
             }
             
             .parking-area {
+                width: calc(100vw - 30px);
+                max-width: 320px;
                 height: 280px;
                 padding: 10px;
+                margin: 10px auto;
             }
             
             .slot {
+                width: 90%;
                 height: 40px;
                 margin: 3px 0;
                 font-size: 0.9rem;
@@ -176,20 +164,6 @@
                 font-size: 0.8rem;
             }
             
-            .bottom-area {
-                height: 50px;
-            }
-            
-            .barrier {
-                width: 100px;
-                height: 30px;
-                margin-right: 8px;
-            }
-            
-            .gate {
-                width: 60px;
-                height: 12px;
-            }
         }
         
         /* Emergency Dialog */
@@ -213,6 +187,7 @@
             text-align: center;
             max-width: 400px;
             width: 90%;
+            margin: 0 auto;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             animation: emergencyPulse 1s infinite alternate;
         }
@@ -341,19 +316,6 @@
             
             parkingArea.appendChild(slotsContainer);
             
-            // // Tạo phần dưới chứa barrier và gate
-            // const bottomArea = document.createElement('div');
-            // bottomArea.className = 'bottom-area';
-            
-            // const barrier = document.createElement('div');
-            // barrier.className = 'barrier';
-            
-            // const gate = document.createElement('div');
-            // gate.className = 'gate';
-            
-            // bottomArea.appendChild(barrier);
-            // bottomArea.appendChild(gate);
-            // parkingArea.appendChild(bottomArea);
         }
 
         // Lắng nghe thay đổi dữ liệu slots
